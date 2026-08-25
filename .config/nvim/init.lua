@@ -42,6 +42,17 @@ vim.pack.add({
 vim.o.background = 'light'
 vim.cmd.colorscheme('onehalflight')
 
+-- Prisma LSP provides language features, not syntax highlighting. Install and
+-- enable the Prisma Tree-sitter parser for highlighted schema files.
+require('nvim-treesitter').setup({})
+require('nvim-treesitter').install({ 'prisma' })
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = 'prisma',
+	callback = function(args)
+		vim.treesitter.start(args.buf, 'prisma')
+	end,
+})
+
 -- Hightlight on yank
 vim.api.nvim_create_autocmd('TextYankPost', {
 	group = vim.api.nvim_create_augroup('highlight_yank', { clear = true }),
@@ -111,6 +122,11 @@ vim.lsp.config('lua_ls', {
 	},
 })
 vim.lsp.enable('lua_ls')
+-- Prisma projects live in workspace packages; use the Prisma config as the
+-- root marker instead of the monorepo's top-level .git directory.
+vim.lsp.config('prismals', {
+	root_markers = { 'prisma.config.ts', 'package.json' },
+})
 vim.lsp.enable('prismals')
 vim.lsp.enable('oxfmt')
 vim.lsp.enable('oxlint')

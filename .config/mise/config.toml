@@ -29,6 +29,8 @@ usage = "latest"
 gh = "latest"
 pnpm = "latest"
 fzf = "latest"
+rtk = "latest"
+"npm:tree-sitter-cli" = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
