@@ -64,7 +64,8 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 -- Scratch
 require('scratch').setup({
-	filetypes = { "lua", "sh", "ts" }
+	file_picker = "fzflua",
+	filetypes = { "lua", "sh", "ts", "html" }
 })
 
 -- Diagnostics
@@ -290,9 +291,12 @@ cmp.setup({
 })
 
 -- Search
+local fzf = require('fzf-lua')
 
-require('fzf-lua').setup({})
-vim.keymap.set('n', '<leader>f', FzfLua.files, { desc = 'Fzf find files' })
+fzf.setup({ "ivy" })
+fzf.register_ui_select()
+
+vim.keymap.set('n', '<leader>f', FzfLua.global, { desc = 'Fzf find files' })
 vim.keymap.set('n', '<leader>s', FzfLua.lsp_live_workspace_symbols, { desc = 'Fzf search symbols' })
 
 vim.keymap.set('n', '<leader>t', function()
