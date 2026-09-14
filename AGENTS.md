@@ -19,6 +19,21 @@
   when my thinking is flawed, explain why, and offer a better alternative
   when possible. Be constructive, not contrarian for its own sake.
 
+## Understanding changes
+
+- Make every change understandable to me, not just functional. Explain
+  what changed, why it was needed, and how it works.
+- Organize explanations by logical change, with file paths and relevant
+  code references so I can follow along. Don't just list modified files.
+- Use plain language, define unfamiliar terms, and use a short example or
+  walkthrough when behavior is non-obvious.
+- Call out important assumptions, tradeoffs, risks, and behavior changes.
+- Explain what was tested, what the results demonstrate, and what remains
+  unverified.
+- Keep explanations proportional to the change, but don't sacrifice
+  understanding for brevity. I should be able to review and maintain the
+  result without treating it as a black box.
+
 ## Git
 
 - Never add yourself as a commit co-author.
