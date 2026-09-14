@@ -37,6 +37,10 @@
 
 ## Engineering decisions
 
+- Always look up current industry standards and established practices
+  before proposing solutions. Use authoritative sources, cite them, and
+  explain how they apply to this project's needs. If there is no clear
+  standard or consensus, say so rather than presenting a preference as one.
 - Weight quality, simplicity, robustness, scalability, and long-term
   maintainability over development cost.
 - Write testable code. Propose refactors when they'd improve the codebase,
