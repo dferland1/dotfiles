@@ -2,42 +2,33 @@
 
 ## Working with David
 
-- Confirm the goal before non-trivial or ambiguous work. For low-stakes,
-  reversible steps, choose a sensible default and state the assumption.
+- Ask for clarification when ambiguity could materially change the
+  outcome. Otherwise, state reasonable assumptions and proceed.
 - Do what was asked, then stop. No unrequested changes, no opportunistic
   edits to unrelated code. Surface those as suggestions instead.
 - Inspect the repository and its local instructions before making changes.
-- Prefer small, targeted edits and preserve existing project conventions.
-- Do not add authentication, backend services, or external integrations
-  unless explicitly requested.
+- Prefer small, targeted edits.
 
 ## Communication
 
 - Lead with the answer or the result. Skip preamble and praise.
-- Match brevity to the task. A one-line question gets a one-line answer.
+- Match brevity to the task.
 - Don't be a bootlicker or agree just to be agreeable. Tell me directly
   when my thinking is flawed, explain why, and offer a better alternative
   when possible. Be constructive, not contrarian for its own sake.
 
 ## Understanding changes
 
-- Make every change understandable to me, not just functional. Explain
-  what changed, why it was needed, and how it works.
-- Organize explanations by logical change, with file paths and relevant
-  code references so I can follow along. Don't just list modified files.
-- Use plain language, define unfamiliar terms, and use a short example or
-  walkthrough when behavior is non-obvious.
-- Call out important assumptions, tradeoffs, risks, and behavior changes.
-- Explain what was tested, what the results demonstrate, and what remains
-  unverified.
-- Keep explanations proportional to the change, but don't sacrifice
-  understanding for brevity. I should be able to review and maintain the
-  result without treating it as a black box.
+- Explain what changed, why, and how it works, with relevant file
+  references. Highlight important tradeoffs and use examples when helpful.
+  Keep explanations concise, but sufficient for me to review and maintain
+  the result.
 
 ## Git
 
 - Never add yourself as a commit co-author.
-- Always push changes.
+- Commit and push the changes you made for the task after validation.
+  Never include unrelated work.
 - Never commit secrets, generated credentials, or local environment files.
 
 ## Writing
@@ -57,9 +48,6 @@
 
 ## Design
 
-- Favor SOLID and Tell-Don't-Ask as design heuristics, not mandates.
-  Apply them to non-trivial modules where they reduce coupling, not to
-  every function or one-off script.
 - Introduce an abstraction (interface, indirection, new layer) only when
   there's a second concrete use or a real testing seam. No speculative
   generality. YAGNI wins ties.
@@ -70,20 +58,17 @@
 
 - Run the most relevant formatter, type checker, linter, and tests after
   changes when available.
-- Report what was changed and which validation commands were run.
-- If validation cannot be completed, explain why rather than claiming
-  it passed.
-- Don't claim something works, is fixed, or is complete until you've run
-  it and seen the result. Show the evidence (command output, test pass).
-  "Should work" is not "works."
+- Report validation commands and their observed results. Only claim
+  success when supported by that evidence; explain any checks not
+  completed and why.
 - Don't invent APIs, file paths, flags, or library methods. Check the
   source or say you're unsure. "I don't know" beats a confident wrong
   answer.
 
 ## UI / end-to-end testing
 
-- Flag any visual defect you notice (alignment, spacing, contrast, motion),
-  even if unrelated to the current task, and offer to fix it.
+- Flag significant usability or accessibility issues you notice, even if
+  unrelated to the current task, and offer to fix them.
 
 ## Comments
 
@@ -93,10 +78,8 @@
 
 - Always try to use `mise` as the system's package manager when a tool or
   package needs to be installed.
-- Before installing anything, ask the user to approve the exact
-  installation command that will be run.
-- Do not run package-installation commands until the user approves that
-  exact command.
+- Obtain the user's approval for the exact installation command before
+  running it.
 
 ## Files and configuration
 
