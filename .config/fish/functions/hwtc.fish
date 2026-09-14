@@ -34,5 +34,19 @@ for wt in json.load(sys.stdin).get("result", {}).get("worktrees", []):
         tilt down -f $current/Tiltfile
     end
 
+    # Stop dev servers before Herdr starts deleting the checkout. Otherwise a
+    # watcher can recreate files during removal and leave a broken worktree.
+    set -l panes (herdr pane list | python3 -c '
+import sys, json
+workspace, current_pane = sys.argv[1:]
+for pane in json.load(sys.stdin).get("result", {}).get("panes", []):
+    if pane.get("workspace_id") == workspace and pane.get("pane_id") != current_pane:
+        print(pane["pane_id"])
+' $workspace "$HERDR_PANE_ID")
+    for pane in $panes
+        herdr pane send-keys $pane Ctrl+C
+    end
+    test (count $panes) -eq 0; or sleep 1
+
     herdr worktree remove --workspace $workspace $argv
 end
