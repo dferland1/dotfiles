@@ -134,6 +134,14 @@ vim.lsp.enable('oxlint')
 vim.lsp.enable('tilt_ls')
 vim.lsp.enable('rust_analyzer')
 vim.lsp.enable('taplo')
+vim.lsp.enable('gopls')
+
+vim.lsp.config('phpantom_lsp', {
+	cmd = { 'phpantom_lsp' },
+	filetypes = { 'php' },
+	root_markers = { '.phpantom.toml', '.git', 'composer.json' },
+})
+vim.lsp.enable('phpantom_lsp')
 
 -- Typescript 7
 vim.lsp.config('ts7', {
