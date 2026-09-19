@@ -30,7 +30,7 @@ gh = "latest"
 pnpm = "latest"
 fzf = "latest"
 rtk = "latest"
-"npm:tree-sitter-cli" = "latest"
+tree-sitter = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]

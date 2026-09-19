@@ -45,7 +45,7 @@ vim.cmd.colorscheme('onehalflight')
 -- Prisma LSP provides language features, not syntax highlighting. Install and
 -- enable the Prisma Tree-sitter parser for highlighted schema files.
 require('nvim-treesitter').setup({})
-require('nvim-treesitter').install({ 'prisma' })
+require('nvim-treesitter').install({ 'prisma', 'dockerfile' })
 vim.api.nvim_create_autocmd('FileType', {
 	pattern = 'prisma',
 	callback = function(args)
@@ -135,6 +135,7 @@ vim.lsp.enable('tilt_ls')
 vim.lsp.enable('rust_analyzer')
 vim.lsp.enable('taplo')
 vim.lsp.enable('gopls')
+
 
 vim.lsp.config('phpantom_lsp', {
 	cmd = { 'phpantom_lsp' },
