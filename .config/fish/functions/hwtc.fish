@@ -48,5 +48,22 @@ for pane in json.load(sys.stdin).get("result", {}).get("panes", []):
     end
     test (count $panes) -eq 0; or sleep 1
 
+    # Tilt and dev scripts can leave detached watchers behind after their pane
+    # exits. Stop processes whose command still references this checkout so
+    # they cannot recreate files while Git removes the worktree.
+    set -l worktree_pids (ps -axo pid=,command= | awk -v path="$current" 'index($0, path) { print $1 }')
+    if test (count $worktree_pids) -gt 0
+        kill -TERM $worktree_pids 2>/dev/null
+        sleep 2
+        for pid in $worktree_pids
+            if kill -0 $pid 2>/dev/null
+                kill -KILL $pid 2>/dev/null
+            end
+        end
+    end
+
+    # Do not keep the cleanup process itself inside the directory being
+    # removed. This also prevents child commands from inheriting that cwd.
+    cd $main; or return 1
     herdr worktree remove --workspace $workspace $argv
 end
