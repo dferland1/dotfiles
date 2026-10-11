@@ -6,6 +6,7 @@ type Repository = {
 	branch: string;
 	forge: Forge;
 	reference: string;
+	webUrl: string;
 };
 
 const STATUS_ID = "pull-request";
@@ -17,13 +18,17 @@ function parseRepository(remoteUrl: string, branch: string): Repository | undefi
 	const [, host, rawPath] = match;
 	if (!host || !rawPath) return undefined;
 	const path = rawPath.replace(/\.git$/, "");
+	const pathSegments = path.split("/");
+	if (pathSegments.some((segment) => !segment || segment === "." || segment === "..")) return undefined;
+	const webUrl = `https://${host}/${pathSegments.map(encodeURIComponent).join("/")}`;
 
 	if (host === "github.com") {
-		return { branch, forge: "github", reference: path };
+		if (pathSegments.length !== 2) return undefined;
+		return { branch, forge: "github", reference: path, webUrl };
 	}
 
 	if (host === "gitlab.com") {
-		return { branch, forge: "gitlab", reference: remoteUrl };
+		return { branch, forge: "gitlab", reference: remoteUrl, webUrl };
 	}
 
 	return undefined;
@@ -110,7 +115,10 @@ export default function (pi: ExtensionAPI): void {
 		}
 
 		const label = repository.forge === "github" ? `PR #${number}` : `MR !${number}`;
-		ctx.ui.setStatus(STATUS_ID, ctx.ui.theme.fg("accent", label));
+		const requestPath = repository.forge === "github" ? "pull" : "-/merge_requests";
+		const url = `${repository.webUrl}/${requestPath}/${number}`;
+		const link = `\u001b]8;;${url}\u001b\\${ctx.ui.theme.fg("accent", label)}\u001b]8;;\u001b\\`;
+		ctx.ui.setStatus(STATUS_ID, link);
 	};
 
 	pi.on("session_start", (_event, ctx) => {
