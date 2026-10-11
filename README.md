@@ -4,6 +4,22 @@
 stow --no-folding .
 ```
 
+## Shared agent skills
+
+`issue-plan` investigates the issue referenced by the current branch and returns
+a short fix plan without changing code or the tracker. It detects the tracker
+from project evidence and uses existing authenticated integrations.
+
+The source is `.agents/skills/issue-plan/SKILL.md`. Pi discovers it through
+`~/.agents/skills/`; `.claude/skills/issue-plan` links to the same skill for
+Claude Code. The `stow` command above installs both globally.
+
+- Pi: `/skill:issue-plan`
+- Claude Code: `/issue-plan`
+
+Restart Pi after installation. In Claude Code, run `/reload-skills` if the
+personal skills directory was created during the session.
+
 ## Prerequisites
 
 Most config is managed via [mise](https://mise.jdx.dev) (`mise install`), but a
