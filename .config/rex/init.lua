@@ -5,6 +5,11 @@ rex.bind("cmd+shift+l", "pane.focus", { direction = "right" })
 rex.unbind("alt+cmd+m")
 rex.bind("cmd+shift+m", "pane.minimize_floating")
 
+local pane_bounds = {
+    prompt = { 0.25, 0.39, 0.5, 0.22 },
+    work = { 0.15, 0, 0.85, 1 },
+}
+
 local worktree_prompt = [=[
 function cancel
     rex block close -s "$REX_SESSION" "$REX_BLOCK"
@@ -56,7 +61,7 @@ local function open_worktree_prompt(ctx, operation, branch)
 
     local prompt, prompt_err = rex.session.new_layer({
         window_id = source.block.window_id,
-        bounds = operation == "create" and { 0.25, 0.39, 0.5, 0.22 } or { 0.2, 0.3, 0.6, 0.4 },
+        bounds = pane_bounds.prompt,
         focus = true,
         layout = rex.layout.block({
             flavor = "com.superlogical.terminal.shell",
