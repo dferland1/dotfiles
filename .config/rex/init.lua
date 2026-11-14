@@ -107,3 +107,91 @@ rex.action({
 })
 
 rex.bind("cmd+shift+t", "new_worktree")
+
+local cleanup_worktree_command = [=[
+set -euo pipefail
+
+cancel() {
+    rex block close -s "$REX_SESSION" "$REX_BLOCK"
+    exit 0
+}
+trap cancel INT
+trap 'printf "\nCleanup failed; the worktree tab remains open.\n" >&2' ERR
+
+current=$(git rev-parse --show-toplevel)
+IFS= read -r -d '' main_record < <(git worktree list --porcelain -z)
+main_repo=${main_record#worktree }
+if [[ "$current" == "$main_repo" ]]; then
+    printf 'Refusing to remove the main checkout.\n' >&2
+    exit 1
+fi
+cd "$main_repo"
+
+printf 'Remove worktree: %s\n\n' "$current"
+printf 'This runs tilt down if a Tiltfile exists, closes every pane in this tab,\nand removes the checkout. The Git branch is kept.\n\n'
+read -r -p 'Continue? [y/N] ' confirm || cancel
+[[ "$confirm" == y || "$confirm" == Y ]] || cancel
+
+check_clean() {
+    local changes
+    changes=$(git -C "$current" status --porcelain --untracked-files=all)
+    if [[ -n "$changes" ]]; then
+        printf 'Refusing to remove a worktree with uncommitted or untracked files:\n%s\n' "$changes" >&2
+        return 1
+    fi
+}
+check_clean
+
+if [[ -e "$current/Tiltfile" ]]; then
+    (cd "$current" && tilt down -f "$current/Tiltfile")
+else
+    printf 'No Tiltfile found; skipping tilt down.\n'
+fi
+check_clean
+
+window_id=$1
+panes=$(rex session inspect "$REX_SESSION" --json | jq -r \
+    --arg window "$window_id" --arg prompt "$REX_BLOCK" \
+    '.windows[] | select(.window_id == $window) | .layers[].blocks[] | select(.block_id != $prompt) | .block_id')
+while IFS= read -r pane; do
+    [[ -n "$pane" ]] || continue
+    rex block close -s "$REX_SESSION" "$pane"
+done <<< "$panes"
+
+git worktree remove -- "$current"
+rex window close -s "$REX_SESSION" "$window_id"
+]=]
+
+rex.action({
+    name = "cleanup_worktree",
+    title = "Clean Up Worktree",
+    run = function(ctx)
+        if not ctx.session_id or not ctx.block_id then
+            error("Run this action from a terminal in a Rex session", 0)
+        end
+        local process, err = rex.block.call("com.superlogical.terminal", "process", { block_id = ctx.block_id })
+        if err ~= nil then error(err, 0) end
+        local cwd = process.foreground and process.foreground.cwd
+        if not cwd then error("Cannot determine the focused terminal's working directory", 0) end
+        local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
+        if source_err ~= nil then error(source_err, 0) end
+
+        local prompt, prompt_err = rex.session.new_layer({
+            window_id = source.block.window_id,
+            bounds = { 0.2, 0.3, 0.6, 0.4 },
+            focus = true,
+            layout = rex.layout.block({
+                flavor = "com.superlogical.terminal.shell",
+                label = "Clean up worktree",
+                options = {
+                    cwd = cwd,
+                    shell = "none",
+                    command = { "bash", "-c", cleanup_worktree_command, "cleanup-worktree", source.block.window_id },
+                    exit = { on_completion = false },
+                },
+            }),
+        })
+        if prompt_err ~= nil then error(prompt_err, 0) end
+        return prompt
+    end,
+})
