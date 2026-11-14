@@ -25,6 +25,19 @@ if rex.args.operation == "create" then
             options = { cwd = worktree.worktree },
         }),
     }))
+    local lazygit = checked(rex.session.new_layer({
+        window_id = window.window_id,
+        bounds = { 0.1, 0.1, 0.8, 0.8 },
+        focus = false,
+        layout = rex.layout.block({
+            flavor = "com.superlogical.terminal.shell",
+            label = "Lazygit",
+            options = { cwd = worktree.worktree, command = { "lazygit" } },
+        }),
+    }))
+    checked(rex.call("session.set_layer_state", {
+        session_id = rex.session_id, layer_id = lazygit.layer_id, state = "minimized",
+    }))
     checked(rex.session.focus_window({ window_id = window.window_id }))
     checked(rex.call("block.close", { session_id = rex.session_id, block_id = rex.block_id }))
 elseif rex.args.operation == "close" then
