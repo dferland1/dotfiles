@@ -50,6 +50,19 @@
 - Match the conventions of the file you're editing - naming, structure,
   error handling - over your own defaults.
 
+### Native solutions first
+
+- Before implementing an integration or workaround, inspect the product's
+  current documentation, installed API, and relevant examples for native
+  capabilities.
+- Search by the desired behavior and related concepts, not just an exact
+  API name.
+- Prefer native capabilities that satisfy the request. Use external tools
+  only after identifying a concrete native limitation, and explain that
+  limitation before proceeding.
+- Distinguish "not found" from "unsupported." If uncertain, investigate
+  further or ask rather than asserting the capability doesn't exist.
+
 ## Design
 
 - Introduce an abstraction (interface, indirection, new layer) only when
