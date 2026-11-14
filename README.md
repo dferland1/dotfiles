@@ -6,16 +6,19 @@ stow --no-folding .
 
 ## Shared agent skills
 
-`issue-plan` investigates the issue referenced by the current branch and returns
-a short fix plan without changing code or the tracker. It detects the tracker
-from project evidence and uses existing authenticated integrations.
+- `issue-plan` investigates the issue referenced by the current branch and
+  returns a short fix plan without changing code or the tracker. It detects the
+  tracker from project evidence and uses existing authenticated integrations.
+- `pr` writes pull request bodies (summary visual, evidence, merge danger).
+  Vendored from [mattpocock/skills](https://github.com/mattpocock/skills/tree/main/skills/engineering/pr)
+  under its MIT license; to update, re-download its files and review the diff.
 
-The source is `.agents/skills/issue-plan/SKILL.md`. Pi discovers it through
-`~/.agents/skills/`; `.claude/skills/issue-plan` links to the same skill for
-Claude Code. The `stow` command above installs both globally.
+Each skill's source is `.agents/skills/<name>/`. Pi discovers them through
+`~/.agents/skills/`; `.claude/skills/<name>` links to the same skill for
+Claude Code. The `stow` command above installs them globally.
 
-- Pi: `/skill:issue-plan`
-- Claude Code: `/issue-plan`
+- Pi: `/skill:<name>`
+- Claude Code: `/<name>`
 
 Restart Pi after installation. In Claude Code, run `/reload-skills` if the
 personal skills directory was created during the session.
