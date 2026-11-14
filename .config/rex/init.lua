@@ -5,53 +5,6 @@ rex.bind("cmd+shift+l", "pane.focus", { direction = "right" })
 rex.unbind("alt+cmd+m")
 rex.bind("cmd+shift+m", "pane.minimize_floating")
 
-local worktree_command = [=[
-set -euo pipefail
-
-IFS= read -r -d '' main_record < <(git worktree list --porcelain -z)
-main_repo=${main_record#worktree }
-project=$(basename "$main_repo")
-
-branch=$1
-case "$branch" in
-    -*) printf 'Branch names cannot start with a dash.\n' >&2; exit 1 ;;
-esac
-git check-ref-format "refs/heads/$branch"
-
-worktree="$(dirname "$main_repo")/.worktrees/$project/$branch"
-if [[ -e "$worktree" || -L "$worktree" ]]; then
-    printf 'Worktree path already exists: %s\n' "$worktree" >&2
-    exit 1
-fi
-
-if git show-ref --verify --quiet "refs/heads/$branch"; then
-    git worktree add -- "$worktree" "$branch"
-else
-    status=$?
-    [[ "$status" -eq 1 ]] || exit "$status"
-    git worktree add -b "$branch" -- "$worktree" HEAD
-fi
-
-cd "$worktree"
-window_id=$(rex block inspect "$REX_BLOCK" --json | jq -er '.block.window_id')
-rex window rename -s "$REX_SESSION" "$window_id" "$project/$branch"
-exec "${SHELL:-/bin/sh}" -l
-]=]
-
-local worktree_prompt = [=[
-set -euo pipefail
-
-trap 'exit 0' INT
-printf 'New worktree\n\nEnter a Git branch name. Empty input or Ctrl+C cancels.\n\n'
-read -r -p 'Branch: ' branch || exit 0
-[[ -n "$branch" ]] || exit 0
-
-if ! rex do -s "$1" -b "$2" new_worktree "branch=$branch"; then
-    printf '\nPress Enter to close.'
-    read -r || exit 0
-fi
-]=]
-
 rex.action({
     name = "new_worktree",
     title = "New Worktree Tab",
@@ -65,6 +18,9 @@ rex.action({
         local cwd = process.foreground and process.foreground.cwd
         if not cwd then error("Cannot determine the focused terminal's working directory", 0) end
 
+        local config_home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+        local script = config_home .. "/fish/scripts/worktree-create.fish"
+
         if not args.branch or args.branch == "" then
             local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
             if source_err ~= nil then error(source_err, 0) end
@@ -77,10 +33,7 @@ rex.action({
                     label = "New worktree",
                     options = {
                         cwd = cwd,
-                        shell = "none",
-                        command = {
-                            "bash", "-c", worktree_prompt, "worktree-prompt", ctx.session_id, ctx.block_id,
-                        },
+                        command = { "fish", script, "--prompt", ctx.block_id },
                         exit = { on_completion = true },
                     },
                 }),
@@ -95,8 +48,7 @@ rex.action({
                 flavor = "com.superlogical.terminal.shell",
                 options = {
                     cwd = cwd,
-                    shell = "none",
-                    command = { "bash", "-c", worktree_command, "new-worktree", args.branch },
+                    command = { "fish", script, args.branch },
                     exit = { on_completion = false },
                 },
             }),
