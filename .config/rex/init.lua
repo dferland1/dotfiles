@@ -93,3 +93,5 @@ rex.action({
         return prompt
     end,
 })
+
+rex.bind("cmd+shift+c", "cleanup_worktree")
