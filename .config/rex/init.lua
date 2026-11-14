@@ -12,11 +12,7 @@ IFS= read -r -d '' main_record < <(git worktree list --porcelain -z)
 main_repo=${main_record#worktree }
 project=$(basename "$main_repo")
 
-branch=${1:-}
-if [[ -z "$branch" ]]; then
-    read -r -p 'Worktree branch (empty to cancel): ' branch
-fi
-[[ -n "$branch" ]] || exit 0
+branch=$1
 case "$branch" in
     -*) printf 'Branch names cannot start with a dash.\n' >&2; exit 1 ;;
 esac
@@ -42,11 +38,59 @@ rex window rename -s "$REX_SESSION" "$window_id" "$project/$branch"
 exec "${SHELL:-/bin/sh}" -l
 ]=]
 
+local worktree_prompt = [=[
+set -euo pipefail
+
+show_error() {
+    osascript - "$1" <<'APPLESCRIPT'
+on run argv
+    display alert "Cannot Create Worktree" message (item 1 of argv) as critical
+end run
+APPLESCRIPT
+}
+
+if branch=$(osascript 2>&1 <<'APPLESCRIPT'
+try
+    activate
+    set response to display dialog "Worktree name (Git branch):" default answer "" with title "New Worktree" buttons {"Cancel", "Create"} default button "Create" cancel button "Cancel"
+    return text returned of response
+on error messageText number errorNumber
+    if errorNumber is -128 then return ""
+    error messageText number errorNumber
+end try
+APPLESCRIPT
+); then
+    [[ -n "$branch" ]] || exit 0
+else
+    show_error "$branch"
+    exit 1
+fi
+
+if output=$(rex do -s "$1" -b "$2" new_worktree "branch=$branch" 2>&1); then
+    exit 0
+else
+    show_error "$output"
+    exit 1
+fi
+]=]
+
 rex.action({
     name = "new_worktree",
     title = "New Worktree Tab",
     args = { branch = "string?" },
     run = function(ctx, args)
+        if not args.branch or args.branch == "" then
+            if not ctx.session_id or not ctx.block_id then
+                error("Run this action from a terminal in a Rex session", 0)
+            end
+            -- A dialog may outlive Rex's 30-second action limit.
+            local prompt, prompt_err = rex.exec.start({
+                "bash", "-c", worktree_prompt, "worktree-prompt", ctx.session_id, ctx.block_id,
+            }, { detach = true })
+            if not prompt then error(prompt_err, 0) end
+            return
+        end
+
         local process, err = rex.block.call("com.superlogical.terminal", "process", { block_id = ctx.block_id })
         if err ~= nil then error(err, 0) end
         local cwd = process.foreground and process.foreground.cwd
@@ -59,7 +103,7 @@ rex.action({
                 options = {
                     cwd = cwd,
                     shell = "none",
-                    command = { "bash", "-c", worktree_command, "new-worktree", args.branch or "" },
+                    command = { "bash", "-c", worktree_command, "new-worktree", args.branch },
                     exit = { on_completion = false },
                 },
             }),
