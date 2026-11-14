@@ -16,6 +16,12 @@ function worktree-create
     set -l records (git worktree list --porcelain -z | string split0)
     or return $status
     set -l main_repo (string replace 'worktree ' '' -- "$records[1]")
+    set -l current (git rev-parse --show-toplevel)
+    or return $status
+    if test "$current" != "$main_repo"
+        printf 'Create worktrees from the main checkout, not another worktree.\n' >&2
+        return 1
+    end
     set -l project (basename "$main_repo")
     set -l worktree (dirname "$main_repo")/.worktrees/"$project"/"$branch"
     if test -e "$worktree"; or test -L "$worktree"

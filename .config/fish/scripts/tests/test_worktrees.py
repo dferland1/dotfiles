@@ -70,15 +70,39 @@ class WorktreeScriptsTest(unittest.TestCase):
         self.assertTrue(expected.is_dir())
         return expected
 
-    def test_create_existing_branch_and_from_linked_head(self):
+    def test_create_existing_and_new_branches_from_main_checkout(self):
         self.git("branch", "existing")
-        first = self.create("existing")
-        self.commit("linked HEAD", cwd=first)
-        nested = self.create("feature/nested", cwd=first)
+        self.create("existing")
+        subdir = self.repo / "subdir"
+        subdir.mkdir()
+        created = self.create("feature/new", cwd=subdir)
         self.assertEqual(
-            self.git("rev-parse", "HEAD", cwd=nested),
-            self.git("rev-parse", "HEAD", cwd=first),
+            self.git("rev-parse", "HEAD", cwd=created),
+            self.git("rev-parse", "HEAD"),
         )
+
+    def test_create_from_linked_worktree_is_rejected_without_side_effects(self):
+        linked = self.create("linked")
+        subdir = linked / "subdir"
+        subdir.mkdir()
+        self.git("branch", "existing")
+        before = self.git("worktree", "list", "--porcelain")
+        branches = self.git("for-each-ref", "--format=%(refname)", "refs/heads")
+        for cwd in [linked, subdir]:
+            for branch in ["feature/nested", "existing"]:
+                with self.subTest(cwd=cwd, branch=branch):
+                    result = self.run_script("create", branch, cwd=cwd)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("from the main checkout", result.stderr)
+                    self.assertEqual(result.stdout, "")
+                    self.assertEqual(self.git("worktree", "list", "--porcelain"), before)
+                    self.assertEqual(
+                        self.git("for-each-ref", "--format=%(refname)", "refs/heads"),
+                        branches,
+                    )
+                    self.assertFalse(
+                        (self.root / ".worktrees" / self.repo.name / branch).exists()
+                    )
 
     def test_branch_name_is_passed_literally(self):
         worktree = self.create('topic/quoted-\'";$HOME')
