@@ -4,6 +4,7 @@ rex.bind("cmd+shift+k", "pane.focus", { direction = "up" })
 rex.bind("cmd+shift+l", "pane.focus", { direction = "right" })
 rex.unbind("alt+cmd+m")
 rex.bind("cmd+shift+m", "pane.minimize_floating")
+rex.bind("cmd+shift+o", "pane.minimize_all_floating")
 
 local pane_bounds = require("pane-bounds")
 
