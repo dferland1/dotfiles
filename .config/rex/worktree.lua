@@ -12,6 +12,17 @@ function worktree.open_prompt(ctx, operation, branch)
     local process = checked(rex.block.call("com.superlogical.terminal", "process", { block_id = ctx.block_id }))
     local cwd = process.foreground and process.foreground.cwd
     if not cwd then error("Cannot determine the focused terminal's working directory", 0) end
+    if operation == "create" then
+        local git_dirs = {}
+        for _, flag in ipairs({ "--git-dir", "--git-common-dir" }) do
+            local result = checked(rex.exec({ "git", "rev-parse", "--path-format=absolute", flag }, { cwd = cwd }))
+            if not result.ok then error(result.stderr, 0) end
+            git_dirs[#git_dirs + 1] = result.stdout
+        end
+        if git_dirs[1] ~= git_dirs[2] then
+            error("Create worktrees from the main checkout, not another worktree.", 0)
+        end
+    end
     local source = checked(rex.session.describe_block({ block_id = ctx.block_id }))
     local config_home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
     local pane_bounds = dofile(config_home .. "/rex/pane-bounds.lua")
