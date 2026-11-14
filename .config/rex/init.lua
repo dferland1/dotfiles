@@ -41,36 +41,14 @@ exec "${SHELL:-/bin/sh}" -l
 local worktree_prompt = [=[
 set -euo pipefail
 
-show_error() {
-    osascript - "$1" <<'APPLESCRIPT'
-on run argv
-    display alert "Cannot Create Worktree" message (item 1 of argv) as critical
-end run
-APPLESCRIPT
-}
+trap 'exit 0' INT
+printf 'New worktree\n\nEnter a Git branch name. Empty input or Ctrl+C cancels.\n\n'
+read -r -p 'Branch: ' branch || exit 0
+[[ -n "$branch" ]] || exit 0
 
-if branch=$(osascript 2>&1 <<'APPLESCRIPT'
-try
-    activate
-    set response to display dialog "Worktree name (Git branch):" default answer "" with title "New Worktree" buttons {"Cancel", "Create"} default button "Create" cancel button "Cancel"
-    return text returned of response
-on error messageText number errorNumber
-    if errorNumber is -128 then return ""
-    error messageText number errorNumber
-end try
-APPLESCRIPT
-); then
-    [[ -n "$branch" ]] || exit 0
-else
-    show_error "$branch"
-    exit 1
-fi
-
-if output=$(rex do -s "$1" -b "$2" new_worktree "branch=$branch" 2>&1); then
-    exit 0
-else
-    show_error "$output"
-    exit 1
+if ! rex do -s "$1" -b "$2" new_worktree "branch=$branch"; then
+    printf '\nPress Enter to close.'
+    read -r || exit 0
 fi
 ]=]
 
@@ -79,22 +57,37 @@ rex.action({
     title = "New Worktree Tab",
     args = { branch = "string?" },
     run = function(ctx, args)
-        if not args.branch or args.branch == "" then
-            if not ctx.session_id or not ctx.block_id then
-                error("Run this action from a terminal in a Rex session", 0)
-            end
-            -- A dialog may outlive Rex's 30-second action limit.
-            local prompt, prompt_err = rex.exec.start({
-                "bash", "-c", worktree_prompt, "worktree-prompt", ctx.session_id, ctx.block_id,
-            }, { detach = true })
-            if not prompt then error(prompt_err, 0) end
-            return
+        if not ctx.session_id or not ctx.block_id then
+            error("Run this action from a terminal in a Rex session", 0)
         end
-
         local process, err = rex.block.call("com.superlogical.terminal", "process", { block_id = ctx.block_id })
         if err ~= nil then error(err, 0) end
         local cwd = process.foreground and process.foreground.cwd
         if not cwd then error("Cannot determine the focused terminal's working directory", 0) end
+
+        if not args.branch or args.branch == "" then
+            local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
+            if source_err ~= nil then error(source_err, 0) end
+            local prompt, prompt_err = rex.session.new_layer({
+                window_id = source.block.window_id,
+                bounds = { 0.25, 0.39, 0.5, 0.22 },
+                focus = true,
+                layout = rex.layout.block({
+                    flavor = "com.superlogical.terminal.shell",
+                    label = "New worktree",
+                    options = {
+                        cwd = cwd,
+                        shell = "none",
+                        command = {
+                            "bash", "-c", worktree_prompt, "worktree-prompt", ctx.session_id, ctx.block_id,
+                        },
+                        exit = { on_completion = true },
+                    },
+                }),
+            })
+            if prompt_err ~= nil then error(prompt_err, 0) end
+            return prompt
+        end
 
         local window, window_err = rex.session.new_window({
             window_label = "New worktree",
