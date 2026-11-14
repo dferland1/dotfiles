@@ -29,7 +29,6 @@ usage = "latest"
 gh = "latest"
 pnpm = "latest"
 fzf = "latest"
-rtk = "latest"
 tree-sitter = "latest"
 
 [settings]
