@@ -5,10 +5,7 @@ rex.bind("cmd+shift+l", "pane.focus", { direction = "right" })
 rex.unbind("alt+cmd+m")
 rex.bind("cmd+shift+m", "pane.minimize_floating")
 
-local pane_bounds = {
-    prompt = { 0.25, 0.39, 0.5, 0.22 },
-    work = { 0.15, 0, 0.85, 1 },
-}
+local pane_bounds = require("pane-bounds")
 
 local worktree_prompt = [=[
 function cancel

@@ -1,3 +1,5 @@
+local pane_bounds = dofile(rex.args.config_home .. "/rex/pane-bounds.lua")
+
 local function checked(result, err)
     if err ~= nil then error(err, 0) end
     return result
@@ -31,7 +33,7 @@ if rex.args.operation == "create" then
     }) do
         local layer = checked(rex.session.new_layer({
             window_id = window.window_id,
-            bounds = { 0.1, 0.1, 0.8, 0.8 },
+            bounds = pane_bounds.work,
             focus = false,
             layout = rex.layout.block({
                 flavor = "com.superlogical.terminal.shell",
