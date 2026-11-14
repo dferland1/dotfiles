@@ -23,7 +23,7 @@ function worktree-create
         return 1
     end
     set -l project (basename "$main_repo")
-    set -l worktree (dirname "$main_repo")/.worktrees/"$project"/"$branch"
+    set -l worktree "$HOME/.worktrees/$project/$branch"
     if test -e "$worktree"; or test -L "$worktree"
         printf 'Worktree path already exists: %s\n' "$worktree" >&2
         return 1

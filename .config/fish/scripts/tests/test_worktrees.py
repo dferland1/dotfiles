@@ -14,6 +14,8 @@ class WorktreeScriptsTest(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="worktree-scripts-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
+        self.home = self.root / "home with spaces"
+        self.home.mkdir()
         self.repo = self.root / "project with spaces"
         self.repo.mkdir()
         self.git("init", "-q")
@@ -35,6 +37,7 @@ class WorktreeScriptsTest(unittest.TestCase):
             if not key.startswith("REX_")
         }
         self.env.update(
+            HOME=str(self.home),
             PATH=f"{tools}:{os.environ['PATH']}",
             TILT_LOG=str(self.root / "tilt.log"),
         )
@@ -63,7 +66,7 @@ class WorktreeScriptsTest(unittest.TestCase):
         result = self.run_script("create", branch, cwd=cwd)
         self.assertEqual(result.returncode, 0, result.stderr)
         data = json.loads(result.stdout)
-        expected = self.root / ".worktrees" / self.repo.name / branch
+        expected = self.home / ".worktrees" / self.repo.name / branch
         self.assertEqual(data["worktree"], str(expected))
         self.assertEqual(data["project"], self.repo.name)
         self.assertEqual(data["branch"], branch)
@@ -101,7 +104,7 @@ class WorktreeScriptsTest(unittest.TestCase):
                         branches,
                     )
                     self.assertFalse(
-                        (self.root / ".worktrees" / self.repo.name / branch).exists()
+                        (self.home / ".worktrees" / self.repo.name / branch).exists()
                     )
 
     def test_branch_name_is_passed_literally(self):
