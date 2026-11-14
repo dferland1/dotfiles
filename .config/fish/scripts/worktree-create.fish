@@ -2,20 +2,8 @@
 
 function worktree-create
     if test (count $argv) -ne 1; or test -z "$argv[1]"
-        printf 'Usage: worktree-create.fish <branch-name>|--check\n' >&2
+        printf 'Usage: worktree-create.fish <branch-name>\n' >&2
         return 1
-    end
-    set -l records (git worktree list --porcelain -z | string split0)
-    or return $status
-    set -l main_repo (string replace 'worktree ' '' -- "$records[1]")
-    set -l current (git rev-parse --show-toplevel)
-    or return $status
-    if test "$current" != "$main_repo"
-        printf 'Create worktrees from the main checkout, not another worktree.\n' >&2
-        return 1
-    end
-    if test "$argv[1]" = --check
-        return 0
     end
     set -l branch "$argv[1]"
     if string match -q -- '-*' "$branch"
@@ -25,6 +13,15 @@ function worktree-create
     git check-ref-format "refs/heads/$branch"
     or return $status
 
+    set -l records (git worktree list --porcelain -z | string split0)
+    or return $status
+    set -l main_repo (string replace 'worktree ' '' -- "$records[1]")
+    set -l current (git rev-parse --show-toplevel)
+    or return $status
+    if test "$current" != "$main_repo"
+        printf 'Create worktrees from the main checkout, not another worktree.\n' >&2
+        return 1
+    end
     set -l project (basename "$main_repo")
     set -l worktree (dirname "$main_repo")/.worktrees/"$project"/"$branch"
     if test -e "$worktree"; or test -L "$worktree"

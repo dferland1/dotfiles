@@ -70,24 +70,6 @@ class WorktreeScriptsTest(unittest.TestCase):
         self.assertTrue(expected.is_dir())
         return expected
 
-    def test_creation_preflight_has_no_side_effects(self):
-        subdir = self.repo / "subdir"
-        subdir.mkdir()
-        before = self.git("worktree", "list", "--porcelain")
-        branches = self.git("for-each-ref", "--format=%(refname)", "refs/heads")
-        for cwd in [self.repo, subdir]:
-            result = self.run_script("create", "--check", cwd=cwd)
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual(result.stdout, "")
-        self.assertEqual(self.git("worktree", "list", "--porcelain"), before)
-        self.assertEqual(
-            self.git("for-each-ref", "--format=%(refname)", "refs/heads"), branches,
-        )
-        self.assertFalse((self.root / ".worktrees").exists())
-        self.assertNotEqual(
-            self.run_script("create", "--check", cwd=self.root).returncode, 0,
-        )
-
     def test_create_existing_and_new_branches_from_main_checkout(self):
         self.git("branch", "existing")
         self.create("existing")
@@ -107,7 +89,7 @@ class WorktreeScriptsTest(unittest.TestCase):
         before = self.git("worktree", "list", "--porcelain")
         branches = self.git("for-each-ref", "--format=%(refname)", "refs/heads")
         for cwd in [linked, subdir]:
-            for branch in ["--check", "feature/nested", "existing"]:
+            for branch in ["feature/nested", "existing"]:
                 with self.subTest(cwd=cwd, branch=branch):
                     result = self.run_script("create", branch, cwd=cwd)
                     self.assertNotEqual(result.returncode, 0)
