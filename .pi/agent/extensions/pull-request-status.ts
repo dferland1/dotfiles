@@ -34,9 +34,13 @@ function parseRepository(remoteUrl: string, branch: string): Repository | undefi
 	return undefined;
 }
 
-async function getRepository(pi: ExtensionAPI, cwd: string): Promise<Repository | undefined> {
-	const branchResult = await pi.exec("git", ["branch", "--show-current"], { cwd, timeout: 5_000 });
-	if (branchResult.code !== 0) return undefined;
+async function getRepository(
+	pi: ExtensionAPI,
+	cwd: string,
+	signal: AbortSignal,
+): Promise<Repository | undefined> {
+	const branchResult = await pi.exec("git", ["branch", "--show-current"], { cwd, signal, timeout: 5_000 });
+	if (signal.aborted || branchResult.code !== 0) return undefined;
 
 	const branch = branchResult.stdout.trim();
 	if (!branch) return undefined;
@@ -44,14 +48,16 @@ async function getRepository(pi: ExtensionAPI, cwd: string): Promise<Repository 
 	let remote = "origin";
 	const remoteResult = await pi.exec("git", ["config", "--get", `branch.${branch}.remote`], {
 		cwd,
+		signal,
 		timeout: 5_000,
 	});
+	if (signal.aborted) return undefined;
 	if (remoteResult.code === 0 && remoteResult.stdout.trim() !== ".") {
 		remote = remoteResult.stdout.trim();
 	}
 
-	const urlResult = await pi.exec("git", ["remote", "get-url", remote], { cwd, timeout: 5_000 });
-	if (urlResult.code !== 0) return undefined;
+	const urlResult = await pi.exec("git", ["remote", "get-url", remote], { cwd, signal, timeout: 5_000 });
+	if (signal.aborted || urlResult.code !== 0) return undefined;
 
 	return parseRepository(urlResult.stdout.trim(), branch);
 }
@@ -60,6 +66,7 @@ async function getRequestNumber(
 	pi: ExtensionAPI,
 	cwd: string,
 	repository: Repository,
+	signal: AbortSignal,
 ): Promise<string | undefined> {
 	const result =
 		repository.forge === "github"
@@ -76,7 +83,7 @@ async function getRequestNumber(
 						"--jq",
 						".number",
 					],
-					{ cwd, timeout: 10_000 },
+					{ cwd, signal, timeout: 10_000 },
 				)
 			: await pi.exec(
 					"glab",
@@ -91,7 +98,7 @@ async function getRequestNumber(
 						"--jq",
 						".iid",
 					],
-					{ cwd, timeout: 10_000 },
+					{ cwd, signal, timeout: 10_000 },
 				);
 
 	if (result.code !== 0) return undefined;
@@ -101,13 +108,16 @@ async function getRequestNumber(
 }
 
 export default function (pi: ExtensionAPI): void {
-	let refreshVersion = 0;
+	let refreshController: AbortController | undefined;
 
 	const refresh = async (ctx: ExtensionContext): Promise<void> => {
-		const version = ++refreshVersion;
-		const repository = await getRepository(pi, ctx.cwd);
-		const number = repository ? await getRequestNumber(pi, ctx.cwd, repository) : undefined;
-		if (version !== refreshVersion) return;
+		refreshController?.abort();
+		refreshController = new AbortController();
+		const { signal } = refreshController;
+		const repository = await getRepository(pi, ctx.cwd, signal);
+		if (signal.aborted) return;
+		const number = repository ? await getRequestNumber(pi, ctx.cwd, repository, signal) : undefined;
+		if (signal.aborted) return;
 
 		if (!repository || !number) {
 			ctx.ui.setStatus(STATUS_ID, undefined);
@@ -122,15 +132,15 @@ export default function (pi: ExtensionAPI): void {
 	};
 
 	pi.on("session_start", (_event, ctx) => {
-		void refresh(ctx);
+		return refresh(ctx);
 	});
 
 	pi.on("agent_settled", (_event, ctx) => {
-		void refresh(ctx);
+		return refresh(ctx);
 	});
 
 	pi.on("session_shutdown", (_event, ctx) => {
-		refreshVersion++;
+		refreshController?.abort();
 		ctx.ui.setStatus(STATUS_ID, undefined);
 	});
 }
