@@ -61,6 +61,8 @@ function worktree-create
     or return $status
     rex window rename -s "$REX_SESSION" "$window_id" "$project/$branch"
     or return $status
+    rex focus -s "$REX_SESSION" "$window_id"
+    or return $status
     exec fish -l
 end
 
