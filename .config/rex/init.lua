@@ -49,27 +49,51 @@ local function open_worktree_prompt(ctx, operation, branch)
     local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
     if source_err ~= nil then error(source_err, 0) end
     local config_home = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+    if operation == "create" then
+        local shell = os.getenv("SHELL")
+        if not shell or shell == "" then error("SHELL is not set", 0) end
+        -- The server's PATH may not include Fish; use the user's login environment.
+        local check, check_err = rex.exec({ shell, "-lc", 'exec fish "$WORKTREE_SCRIPT" --check' }, {
+            cwd = cwd,
+            env = { WORKTREE_SCRIPT = config_home .. "/fish/scripts/worktree-create.fish" },
+        })
+        if check_err ~= nil then error(check_err, 0) end
+        if not check.ok then error(check.stderr, 0) end
+    end
     local payload, payload_err = rex.json.encode({
         operation = operation, branch = branch, cwd = cwd, config_home = config_home,
     })
     if payload_err ~= nil then error(payload_err, 0) end
 
-    local prompt, prompt_err = rex.session.new_layer({
-        window_id = source.block.window_id,
-        bounds = operation == "create" and { 0.25, 0.39, 0.5, 0.22 } or { 0.2, 0.3, 0.6, 0.4 },
-        focus = true,
-        layout = rex.layout.block({
-            flavor = "com.superlogical.terminal.shell",
-            label = operation == "create" and "New worktree" or "Clean up worktree",
-            options = {
-                cwd = config_home,
-                -- Keep checkout and Tilt commands outside the action's 30-second limit.
-                command = { "fish", "-c", worktree_prompt, config_home .. "/rex/worktree.lua", payload },
-                exit = { on_completion = false },
-            },
-        }),
+    local layout = rex.layout.block({
+        flavor = "com.superlogical.terminal.shell",
+        label = operation == "create" and "New worktree" or "Clean up worktree",
+        options = {
+            cwd = config_home,
+            -- Keep checkout and Tilt commands outside the action's 30-second limit.
+            command = { "fish", "-c", worktree_prompt, config_home .. "/rex/worktree.lua", payload },
+            exit = { on_completion = false },
+        },
     })
-    if prompt_err ~= nil then error(prompt_err, 0) end
+    local prompt, prompt_err
+    if operation == "create" then
+        prompt, prompt_err = rex.session.new_window({
+            window_label = "New worktree", focus = true, layout = layout,
+        })
+        if prompt_err ~= nil then error(prompt_err, 0) end
+        -- UI-origin actions can select their own app without enabling Remote Control for CLI callers.
+        if ctx.origin == "key" or ctx.origin == "palette" then
+            rex.client.queue("session.select", { session_id = ctx.session_id, window_id = prompt.window_id })
+        end
+    else
+        prompt, prompt_err = rex.session.new_layer({
+            window_id = source.block.window_id,
+            bounds = { 0.2, 0.3, 0.6, 0.4 },
+            focus = true,
+            layout = layout,
+        })
+        if prompt_err ~= nil then error(prompt_err, 0) end
+    end
     return prompt
 end
 

@@ -17,9 +17,14 @@ local window_id = source.block.window_id
 
 if rex.args.operation == "create" then
     local worktree = run_script("worktree-create", { rex.args.branch }, rex.args.cwd)
-    local window = checked(rex.session.new_window({
-        window_label = worktree.project .. "/" .. worktree.branch,
-        focus = false,
+    checked(rex.session.set_window_label({
+        window_id = window_id, label = worktree.project .. "/" .. worktree.branch,
+    }))
+    local shell = checked(rex.session.new_split({
+        anchor_id = rex.block_id,
+        direction = "horizontal",
+        side = "after",
+        focus = true,
         layout = rex.layout.block({
             flavor = "com.superlogical.terminal.shell",
             options = { cwd = worktree.worktree },
@@ -30,7 +35,7 @@ if rex.args.operation == "create" then
         { label = "Neovim", command = { "nvim", "." } },
     }) do
         local layer = checked(rex.session.new_layer({
-            window_id = window.window_id,
+            window_id = window_id,
             bounds = { 0.1, 0.1, 0.8, 0.8 },
             focus = false,
             layout = rex.layout.block({
@@ -43,9 +48,7 @@ if rex.args.operation == "create" then
             session_id = rex.session_id, layer_id = layer.layer_id, state = "minimized",
         }))
     end
-    -- Dismiss the prompt before switching tabs so its closure cannot restore the old focus.
-    checked(rex.session.detach_block({ block_id = rex.block_id }))
-    checked(rex.session.focus_window({ window_id = window.window_id }))
+    checked(rex.session.focus_block({ block_id = shell.block_ids[1] }))
     checked(rex.call("block.close", { session_id = rex.session_id, block_id = rex.block_id }))
 elseif rex.args.operation == "close" then
     local worktree = run_script("worktree-close", { "--prepare", rex.args.cwd }, rex.args.config_home)
