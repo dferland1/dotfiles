@@ -8,6 +8,7 @@
   "packages": [
     "npm:pi-mcp-adapter",
     "npm:@upstash/context7-pi",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "npm:pi-footer"
   ]
 }
