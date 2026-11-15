@@ -8,7 +8,8 @@
   "packages": [
     "npm:@upstash/context7-pi",
     "npm:pi-web-access",
-    "npm:pi-footer"
+    "npm:pi-footer",
+    "npm:@plannotator/pi-extension"
   ],
   "extensions": [
     "+builtin:llama.cpp",
