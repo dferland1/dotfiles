@@ -22,7 +22,7 @@ if test "$operation" = create
     end
 else
     printf 'Remove worktree at: %s\n\n' (printf '%s' "$payload" | jq -r '.cwd')
-    printf 'This runs tilt down if a Tiltfile exists, closes every pane in this tab,\nand removes the checkout. The Git branch is kept.\n\n'
+    printf 'This runs tilt down and docker compose down when their config files exist,\ncloses every pane in this tab, and removes the checkout.\nThe Git branch and named Docker volumes are kept.\n\n'
     read -l -P 'Continue? [y/N] ' confirm
     or cancel
     contains -- "$confirm" y Y

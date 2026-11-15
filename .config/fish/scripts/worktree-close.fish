@@ -51,6 +51,13 @@ function worktree-close
         else
             printf 'No Tiltfile found; skipping tilt down.\n' >&2
         end
+        for compose_file in compose.yaml compose.yml docker-compose.yaml docker-compose.yml
+            if test -f "$compose_file"
+                docker compose down >&2
+                or return $status
+                break
+            end
+        end
         check_worktree_clean "$current"
         or return $status
     end

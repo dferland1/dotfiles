@@ -32,6 +32,14 @@ class WorktreeScriptsTest(unittest.TestCase):
             'exit "${TILT_STATUS:-0}"\n'
         )
         tilt.chmod(0o755)
+        docker = tools / "docker"
+        docker.write_text(
+            '#!/bin/sh\n'
+            'printf "%s\\n" "$PWD" "$@" >> "$DOCKER_LOG"\n'
+            'if [ "${DOCKER_DIRTY:-0}" = 1 ]; then touch generated; fi\n'
+            'exit "${DOCKER_STATUS:-0}"\n'
+        )
+        docker.chmod(0o755)
         self.env = {
             key: value for key, value in os.environ.items()
             if not key.startswith("REX_")
@@ -40,6 +48,7 @@ class WorktreeScriptsTest(unittest.TestCase):
             HOME=str(self.home),
             PATH=f"{tools}:{os.environ['PATH']}",
             TILT_LOG=str(self.root / "tilt.log"),
+            DOCKER_LOG=str(self.root / "docker.log"),
         )
 
     def git(self, *args, cwd=None):
@@ -184,6 +193,63 @@ class WorktreeScriptsTest(unittest.TestCase):
         self.assertFalse(worktree.exists())
         self.assertTrue((self.root / "tilt.log").exists())
         self.assertTrue(self.git("show-ref", "--verify", "refs/heads/standalone-tilt"))
+
+    def test_compose_down_runs_once_during_prepare_for_each_standard_filename(self):
+        for filename in ["compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml"]:
+            with self.subTest(filename=filename):
+                worktree = self.create(f"compose-{filename}")
+                (worktree / filename).write_text("services: {}\n")
+                self.git("add", filename, cwd=worktree)
+                self.commit("add Compose file", cwd=worktree)
+                prepared = self.run_script("close", "--prepare", str(worktree))
+                self.assertEqual(prepared.returncode, 0, prepared.stderr)
+                self.assertTrue(worktree.exists())
+                removed = self.run_script("close", "--remove", str(worktree))
+                self.assertEqual(removed.returncode, 0, removed.stderr)
+                self.assertFalse(worktree.exists())
+                log = self.root / "docker.log"
+                self.assertEqual(log.read_text().splitlines(), [str(worktree), "compose", "down"])
+                log.unlink()
+
+    def test_compose_failure_and_generated_files_abort_cleanup(self):
+        for branch, env in [
+            ("compose-failure", {"DOCKER_STATUS": "7"}),
+            ("compose-dirty", {"DOCKER_DIRTY": "1"}),
+        ]:
+            with self.subTest(branch=branch):
+                worktree = self.create(branch)
+                (worktree / "compose.yaml").write_text("services: {}\n")
+                self.git("add", "compose.yaml", cwd=worktree)
+                self.commit("add Compose file", cwd=worktree)
+                result = self.run_script("close", cwd=worktree, **env)
+                self.assertNotEqual(result.returncode, 0)
+                if "DOCKER_STATUS" in env:
+                    self.assertEqual(result.returncode, 7)
+                self.assertTrue(worktree.exists())
+
+    def test_standalone_compose_cleanup_without_tiltfile_runs_only_once(self):
+        worktree = self.create("compose-only")
+        self.git("rm", "Tiltfile", cwd=worktree)
+        for filename in ["compose.yaml", "docker-compose.yml"]:
+            (worktree / filename).write_text("services: {}\n")
+            self.git("add", filename, cwd=worktree)
+        self.commit("use Compose instead of Tilt", cwd=worktree)
+        result = self.run_script("close", cwd=worktree)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(worktree.exists())
+        self.assertFalse((self.root / "tilt.log").exists())
+        self.assertEqual(
+            (self.root / "docker.log").read_text().splitlines(),
+            [str(worktree), "compose", "down"],
+        )
+
+    def test_compose_in_parent_directory_is_not_stopped(self):
+        worktree = self.create("no-compose")
+        (worktree.parent / "compose.yaml").write_text("services: {}\n")
+        result = self.run_script("close", cwd=worktree)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(worktree.exists())
+        self.assertFalse((self.root / "docker.log").exists())
 
     def test_standalone_close_without_tiltfile(self):
         worktree = self.create("standalone")
