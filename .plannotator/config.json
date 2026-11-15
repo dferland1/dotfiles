@@ -1,5 +1,9 @@
 {
   "theme": {
     "mode": "light"
+  },
+  "reviewAnalysis": {
+    "semanticDiff": true,
+    "callFlow": false
   }
 }
