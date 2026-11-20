@@ -9,7 +9,8 @@
     "npm:@upstash/context7-pi",
     "npm:pi-web-access",
     "npm:pi-footer",
-    "npm:@plannotator/pi-extension"
+    "npm:@plannotator/pi-extension",
+    "https://github.com/earendil-works/pi-claude-code"
   ],
   "extensions": [
     "+builtin:llama.cpp",
