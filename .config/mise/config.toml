@@ -34,6 +34,8 @@ glab = "latest"
 wrangler = { version = "latest", allow_builds = ["esbuild", "sharp", "workerd"] }
 uv = "latest"
 "npm:@playwright/mcp" = "latest"
+claude = "latest"
+ffmpeg = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["node"]
