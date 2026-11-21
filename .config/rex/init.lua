@@ -11,21 +11,25 @@ rex.bind("cmd+s", "pane.split", { direction = "down" })
 local pane_bounds = require("pane-bounds")
 
 rex.action({
-    name = "float_top_right",
-    title = "Float Pane at Top Right",
+    name = "new_floating_top_right",
+    title = "New Floating Pane at Top Right",
     run = function(ctx)
         if not ctx.session_id or not ctx.block_id then
             error("Run this action from a pane in a Rex session", 0)
         end
-        local result, err = rex.session.float_block({
-            block_id = ctx.block_id,
+        local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
+        if source_err ~= nil then error(source_err, 0) end
+        local result, err = rex.session.new_layer({
+            window_id = source.block.window_id,
             bounds = pane_bounds.popout,
+            focus = true,
+            layout = rex.layout.block({ flavor = "com.superlogical.terminal.shell" }),
         })
         if err ~= nil then error(err, 0) end
         return result
     end,
 })
-rex.bind("cmd+shift+d", "float_top_right")
+rex.bind("cmd+shift+d", "new_floating_top_right")
 
 local worktree = require("worktree")
 
