@@ -5,6 +5,27 @@ rex.bind("cmd+shift+l", "pane.focus", { direction = "right" })
 rex.unbind("alt+cmd+m")
 rex.bind("cmd+shift+m", "pane.minimize_floating")
 rex.bind("cmd+shift+o", "pane.minimize_all_floating")
+rex.bind("cmd+d", "pane.split", { direction = "right" })
+rex.bind("cmd+s", "pane.split", { direction = "down" })
+
+local pane_bounds = require("pane-bounds")
+
+rex.action({
+    name = "float_top_right",
+    title = "Float Pane at Top Right",
+    run = function(ctx)
+        if not ctx.session_id or not ctx.block_id then
+            error("Run this action from a pane in a Rex session", 0)
+        end
+        local result, err = rex.session.float_block({
+            block_id = ctx.block_id,
+            bounds = pane_bounds.popout,
+        })
+        if err ~= nil then error(err, 0) end
+        return result
+    end,
+})
+rex.bind("cmd+shift+d", "float_top_right")
 
 local worktree = require("worktree")
 
