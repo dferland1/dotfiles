@@ -48,8 +48,12 @@ then run `/reload` in Pi. Tests: `bun test ./.pi/agent/tests/review.test.ts`.
 Most config is managed via [mise](https://mise.jdx.dev) (`mise install`), but a
 few things aren't installable that way:
 
-- **Fonts**: install `Monaspace Argon NF` (ghostty) and a Nerd Font for the
-  icon glyphs used by eza/starship/lualine.
+- **Fonts**: install `Monaspace Neon NF` (ghostty). It is a Nerd Font, so it
+  also covers the icon glyphs used by eza/starship/lualine. Get it from
+  `monaspace-nerdfonts-*.zip` in the
+  [Monaspace releases](https://github.com/githubnext/monaspace/releases). On
+  Linux, copy the `Monaspace Neon/*.otf` files into `~/.local/share/fonts/` and
+  run `fc-cache -f`.
 - **Linux clipboard**: nvim uses `clipboard = unnamedplus`. For system-clipboard
   yank/paste you need a provider - `wl-clipboard` (Wayland) or `xclip`/`xsel`
   (X11). Built in on macOS, so nothing to install there.
