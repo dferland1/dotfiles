@@ -34,6 +34,8 @@
 ## Writing
 
 - Never use em-dashes (-). Use standard dashes (-).
+- Explain topics and code using ASD-STE100 (Simplified Technical English).
+  Keep sentences short, use active voice, and avoid filler words.
 
 ## Engineering decisions
 
