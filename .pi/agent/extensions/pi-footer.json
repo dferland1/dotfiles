@@ -66,6 +66,18 @@
         }
       },
       {
+        "id": "context-usage-percent",
+        "type": "context",
+        "enabled": true,
+        "options": {
+          "raw": false,
+          "icon": "",
+          "fg": "brightBlack",
+          "bg": "default",
+          "bold": false
+        }
+      },
+      {
         "id": "cost-mwgggg3o-lybhyp",
         "type": "cost",
         "enabled": true,
