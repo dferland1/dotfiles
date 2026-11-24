@@ -1,9 +1,27 @@
 {
-  "theme": {
-    "mode": "light"
-  },
   "reviewAnalysis": {
     "semanticDiff": true,
     "callFlow": false
+  },
+  "diffOptions": {
+    "overflow": "scroll",
+    "showLineNumbers": false,
+    "showDiffBackground": true,
+    "lineBgIntensity": "subtle",
+    "lineDiffType": "word-alt",
+    "diffIndicators": "none",
+    "diffStyle": "unified"
+  },
+  "agentTool": true,
+  "starAsk": {
+    "canStar": true,
+    "checkedAt": "2026-11-21T01:22:47.713Z",
+    "shownAt": "2026-11-21T15:52:35.944Z",
+    "surface": "review"
+  },
+  "theme": {
+    "mode": "light",
+    "light": "plannotator",
+    "dark": "plannotator"
   }
 }
