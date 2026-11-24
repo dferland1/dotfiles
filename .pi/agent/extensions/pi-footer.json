@@ -45,32 +45,12 @@
         }
       },
       {
-        "id": "context-length-mwgggg3o-800pp0",
-        "type": "context-length",
+        "id": "context-usage",
+        "type": "event",
         "enabled": true,
         "options": {
-          "raw": false,
-          "hideWhenZero": false,
-          "icon": "",
-          "fg": "brightBlack",
-          "bg": "default",
-          "bold": false,
-          "tokenFormatStyle": "default",
-          "contextConditionalColors": false,
-          "contextWarningPercent": 70,
-          "contextDangerPercent": 90,
-          "warningFg": "yellow",
-          "warningBg": "default",
-          "dangerFg": "red",
-          "dangerBg": "default"
-        }
-      },
-      {
-        "id": "context-usage-percent",
-        "type": "context",
-        "enabled": true,
-        "options": {
-          "raw": false,
+          "widgetId": "context-usage",
+          "raw": true,
           "icon": "",
           "fg": "brightBlack",
           "bg": "default",
