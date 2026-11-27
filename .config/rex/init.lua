@@ -31,6 +31,34 @@ rex.action({
 })
 rex.bind("cmd+shift+d", "new_floating_top_right")
 
+rex.action({
+    name = "new_floating_here",
+    title = "New Floating Pane in Current Directory",
+    run = function(ctx)
+        if not ctx.session_id or not ctx.block_id then
+            error("Run this action from a pane in a Rex session", 0)
+        end
+        local process, process_err = rex.block.call("com.superlogical.terminal", "process", { block_id = ctx.block_id })
+        if process_err ~= nil then error(process_err, 0) end
+        local cwd = process.foreground and process.foreground.cwd
+        if not cwd then error("Cannot determine the focused terminal's working directory", 0) end
+        local source, source_err = rex.session.describe_block({ block_id = ctx.block_id })
+        if source_err ~= nil then error(source_err, 0) end
+        local result, err = rex.session.new_layer({
+            window_id = source.block.window_id,
+            bounds = pane_bounds.floating,
+            focus = true,
+            layout = rex.layout.block({
+                flavor = "com.superlogical.terminal.shell",
+                options = { cwd = cwd },
+            }),
+        })
+        if err ~= nil then error(err, 0) end
+        return result
+    end,
+})
+rex.bind("cmd+shift+enter", "new_floating_here")
+
 local worktree = require("worktree")
 
 rex.action({
